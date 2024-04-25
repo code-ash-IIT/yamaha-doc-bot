@@ -8,6 +8,73 @@ from llama_index.core.schema import Document
 
 logger = logging.getLogger(__name__)
 
+import io
+import fitz  # PyMuPDF library
+
+class DocumentWithBlobs(Document):
+    doc_blobs: list[bytes] = []
+
+    def __init__(self, **data):
+        super().__init__(**data)
+        self.doc_blobs = data.get('doc_blobs', [])
+
+class PyMuPDFReader:
+    """PDF parser using PyMuPDF."""
+
+    def __init__(self, return_full_document: bool = False):
+        """
+        Initialize PyMuPDFReader.
+        """
+        self.return_full_document = return_full_document
+
+    def load_data(self, file_path: str) -> list:
+        """Parse file."""
+        docs = []
+
+        # Load the file using PyMuPDF
+        with open(file_path, "rb") as fp:
+            pdf_doc = fitz.open(stream=fp.read(), filetype="pdf")
+
+            # This block returns a whole PDF as a single Document
+            if self.return_full_document:
+                text = ""
+                metadata = {"file_name": file_path}
+
+                for page in range(len(pdf_doc)):
+                    # Extract the text from the page
+                    page_text = pdf_doc[page].get_text()
+                    text += page_text
+
+                docs.append(Document(text=text, metadata=metadata))
+
+            # This block returns each page of a PDF as its own Document
+            else:
+                # Iterate over every page
+                for page in range(len(pdf_doc)):
+                    # Extract the text from the page
+                    page_text = pdf_doc[page].get_text()
+
+                    # # Extract images from the page
+                    # page_images = []
+                    # for img in pdf_doc.get_page_images(page):
+                    #     xref = img[0]
+                    #     image = pdf_doc.extract_image(xref)
+                    #     image_bytes = image["image"]
+                    #     page_images.append(image_bytes)
+
+                    metadata = {"file_name": file_path, "page_num": page}
+
+                    # Create a document for text
+                    text_doc = Document(text=page_text, metadata=metadata)
+                    docs.append(text_doc)
+
+                    # # Create a document for images
+                    # if page_images:
+                    #     image_doc = Document(text="", doc_blobs=page_images, metadata=metadata)
+                    #     docs.append(image_doc)
+
+        return docs
+
 
 # Inspired by the `llama_index.core.readers.file.base` module
 def _try_loading_included_file_formats() -> dict[str, type[BaseReader]]:
@@ -32,7 +99,8 @@ def _try_loading_included_file_formats() -> dict[str, type[BaseReader]]:
 
     default_file_reader_cls: dict[str, type[BaseReader]] = {
         ".hwp": HWPReader,
-        ".pdf": PDFReader,
+        # ".pdf": PDFReader,
+        ".pdf": PyMuPDFReader,
         ".docx": DocxReader,
         ".pptx": PptxReader,
         ".ppt": PptxReader,

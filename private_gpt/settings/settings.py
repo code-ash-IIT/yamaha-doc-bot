@@ -186,7 +186,7 @@ class EmbeddingSettings(BaseModel):
         ),
     )
     embed_dim: int = Field(
-        384,
+        512,#384,
         description="The dimension of the embeddings stored in the Postgres database",
     )
 

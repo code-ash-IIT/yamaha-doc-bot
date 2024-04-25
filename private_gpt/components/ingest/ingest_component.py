@@ -24,6 +24,13 @@ from private_gpt.utils.eta import eta
 
 logger = logging.getLogger(__name__)
 
+# from private_gpt.components.ingest.ingest_helper import DocumentWithBlobs
+
+# from sentence_transformers import SentenceTransformer
+# from llama_index.vector_stores.qdrant import (  # type: ignore
+#                         QdrantVectorStore,
+#                     )
+
 
 class BaseIngestComponent(abc.ABC):
     def __init__(
@@ -117,6 +124,13 @@ class SimpleIngestComponent(BaseIngestComponentWithIndex):
     ) -> None:
         super().__init__(storage_context, embed_model, transformations, *args, **kwargs)
 
+        # self.img_model = SentenceTransformer('clip-ViT-B-32')
+        # from qdrant_client import QdrantClient  # type: ignore
+        # # qclient = QdrantClient("localhost", port=17333)
+        # qclient = QdrantClient(url="http://localhost:17333")
+        
+        # self.image_vector_store = QdrantVectorStore(client=qclient, path='local_data/private_gpt/qdrant/image_store', collection_name='image_store')#settings().qdrant.image_path)
+
     def ingest(self, file_name: str, file_data: Path) -> list[Document]:
         logger.info("Ingesting file_name=%s", file_name)
         documents = IngestionHelper.transform_file_into_documents(file_name, file_data)
@@ -134,6 +148,68 @@ class SimpleIngestComponent(BaseIngestComponentWithIndex):
             )
             saved_documents.extend(self._save_docs(documents))
         return saved_documents
+    # def _separate_text_and_image_documents(self, documents: list[DocumentWithBlobs]) -> tuple[list[DocumentWithBlobs], list[DocumentWithBlobs]]:
+    #     text_documents = []
+    #     image_documents = []
+    #     for doc in documents:
+    #         if doc.doc_blobs:
+    #             image_documents.append(doc)
+    #         else:
+    #             text_documents.append(doc)
+    #     return text_documents, image_documents
+
+    # def _save_image_docs(self, image_documents: list[DocumentWithBlobs]) -> list[DocumentWithBlobs]:
+    #     logger.debug("Transforming count=%s image documents into nodes", len(image_documents))
+    #     image_nodes = run_transformations(
+    #         image_documents,  # type: ignore[arg-type]
+    #         [self.img_model],  # Use the image embedding model for image transformations       self.transformations,
+    #         show_progress=self.show_progress,
+    #     )
+
+    #     # Generate image embeddings
+    #     for doc in image_documents:
+    #         image_embeddings = []
+    #         for image_bytes in doc.doc_blobs:
+    #             image_embedding = self.img_model.encode(image_bytes, convert_to_tensor=True)
+    #             image_embeddings.append(image_embedding)
+    #         doc.embedding = image_embeddings
+
+    #     # Store image embeddings in the image vector store
+    #     self.image_vector_store.add_documents(image_documents)
+
+    #     with self._index_thread_lock:
+    #         logger.info("Inserting count=%s image nodes in the index", len(image_nodes))
+    #         self._index.insert_nodes(image_nodes, show_progress=True)
+    #         for document in image_documents:
+    #             self._index.docstore.set_document_hash(
+    #                 document.get_doc_id(), document.hash
+    #             )
+    #         logger.debug("Persisted the image nodes")
+    #     return image_documents
+    
+    # def ingest(self, file_name: str, file_data: Path) -> list[DocumentWithBlobs]:
+    #     logger.info("Ingesting file_name=%s", file_name)
+    #     documents = IngestionHelper.transform_file_into_documents(file_name, file_data)
+    #     logger.info(
+    #         "Transformed file=%s into count=%s documents", file_name, len(documents)
+    #     )
+    #     logger.debug("Saving the documents in the index and doc store")
+    #     text_documents, image_documents = self._separate_text_and_image_documents(documents)
+    #     saved_text_documents = self._save_docs(text_documents)
+    #     saved_image_documents = self._save_image_docs(image_documents)
+    #     return saved_text_documents + saved_image_documents
+
+    # def bulk_ingest(self, files: list[tuple[str, Path]]) -> list[DocumentWithBlobs]:
+    #     saved_documents = []
+    #     for file_name, file_data in files:
+    #         documents = IngestionHelper.transform_file_into_documents(
+    #             file_name, file_data
+    #         )
+    #         text_documents, image_documents = self._separate_text_and_image_documents(documents)
+    #         saved_text_documents = self._save_docs(text_documents)
+    #         saved_image_documents = self._save_image_docs(image_documents)
+    #         saved_documents.extend(saved_text_documents + saved_image_documents)
+    #     return saved_documents
 
     def _save_docs(self, documents: list[Document]) -> list[Document]:
         logger.debug("Transforming count=%s documents into nodes", len(documents))

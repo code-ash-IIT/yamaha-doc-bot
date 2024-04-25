@@ -32,6 +32,7 @@ class EmbeddingComponent:
                     model_name=settings.huggingface.embedding_hf_model_name,
                     cache_folder=str(models_cache_path),
                 )
+                
             case "sagemaker":
                 try:
                     from private_gpt.components.embedding.custom.sagemaker import (
