@@ -36,6 +36,9 @@ SOURCES_SEPARATOR = "\n\n Sources: \n"
 MODES = ["Query Files", "Search Files", "LLM Chat (no context from files)"]
 
 
+def gen_from_vision(message, response):
+    return "In the end, say thank you!"
+
 class Source(BaseModel):
     file: str
     page: str
@@ -163,7 +166,36 @@ class PrivateGptUi:
                     use_context=True,
                     context_filter=context_filter,
                 )
-                yield from yield_deltas(query_stream)
+                # yield from yield_deltas(query_stream)
+                ############ DEBUG: ###########
+                # for deltas in yield_deltas(query_stream):
+                #     print(f'deltas: {deltas}','\n-----\n')
+                #     yield deltas
+                # # import ...
+                #     yield '\nHi man! Just testing sending response from Image embedding model\n'
+                ###########
+                ###########CHANGED
+                resps=""
+                for response in yield_deltas(query_stream):
+                    resps = response
+                # Generate additional response from gen_from_vision()
+                additional_response = gen_from_vision(message, response)
+
+                # Append the additional response to the original response
+                full_response = "This was your response just now: "+ resps + "\n\n Now I have some additional information for you: " + additional_response
+
+                print(f'FULL RESPONSE: -----{full_response}---------')
+
+                # Send the combined response back to the LLM
+                # new_message = ChatMessage(content=full_response, role=MessageRole.USER)
+                all_messages.append(ChatMessage(content=full_response, role=MessageRole.USER))
+                next_response = self._chat_service.stream_chat(
+                    messages=all_messages,
+                    use_context=True,
+                    context_filter=context_filter,
+                )
+                yield from yield_deltas(next_response)
+                ###########CHANGED
             case "LLM Chat (no context from files)":
                 llm_stream = self._chat_service.stream_chat(
                     messages=all_messages,
