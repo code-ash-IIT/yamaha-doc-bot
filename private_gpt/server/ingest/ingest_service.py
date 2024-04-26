@@ -100,13 +100,13 @@ class IngestService:
         img_embeddings = img_model.encode(images)
         embeddings = np.array(img_embeddings).astype('float32')
         
-        # np.savez(f'../../../local_data/{pdf_name}', embeddings)
+        # np.savez(f'../../../local_data/{pdf_name}.npz', embeddings)
         data = {
         'pdf_name': pdf_name,
         'images': images,
         'embeddings': embeddings
         }
-        with open(f'{pdf_name}.pkl', 'wb') as f:
+        with open(f'../../../local_data/{pdf_name}.pkl', 'wb') as f:
             pickle.dump(data, f)
 
     def bulk_ingest(self, files: list[tuple[str, Path]] -> list[IngestedDoc]):

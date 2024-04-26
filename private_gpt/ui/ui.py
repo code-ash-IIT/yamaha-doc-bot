@@ -23,6 +23,22 @@ from private_gpt.server.ingest.ingest_service import IngestService
 from private_gpt.settings.settings import settings
 from private_gpt.ui.images import logo_svg
 
+import pickle
+import faiss
+import numpy as np
+from sentence_transformers import SentenceTransformer, util
+
+from dotenv import load_dotenv
+# REPLICATE_API_TOKEN = ...  in private_gpt/ui/.env 
+load_dotenv()
+# os.environ["REPLICATE_API_TOKEN"] # gets loaded using load_dotenv()
+
+from llama_index.multi_modal_llms.replicate import ReplicateMultiModal
+from llama_index.core.schema import ImageDocument
+from llama_index.multi_modal_llms.replicate.base import (
+    REPLICATE_MULTI_MODAL_LLM_MODELS,
+)
+
 logger = logging.getLogger(__name__)
 
 THIS_DIRECTORY_RELATIVE = Path(__file__).parent.relative_to(PROJECT_ROOT_PATH)
@@ -36,8 +52,57 @@ SOURCES_SEPARATOR = "\n\n Sources: \n"
 MODES = ["Query Files", "Search Files", "LLM Chat (no context from files)"]
 
 
-def gen_from_vision(message, response):
-    return "In the end, say thank you!"
+def gen_from_vision(pdf_name,message):
+    # return "In the end, say thank you!"
+    
+    def load_database_pickle(pickle_filename):
+        with open(pickle_filename, 'rb') as f:
+            data = pickle.load(f)
+        return data['pdf_name'], data['images'], data['embeddings']
+
+    pdf_name, images, embeddings = load_database_pickle(f'../../local_data/{pdf_name}.pkl')
+
+    multi_modal_llm = ReplicateMultiModal(
+        model=REPLICATE_MULTI_MODAL_LLM_MODELS["llava-13b"],
+        max_new_tokens=200,
+        temperature=0.1,
+    )
+
+    def vision_gen_response(query):
+        
+        text_model = SentenceTransformer('sentence-transformers/clip-ViT-B-32-multilingual-v1', device='cuda:3')
+
+        query_emb = text_model.encode(query)
+
+        # Instantiate a FAISS index
+        index = faiss.IndexFlatL2(embeddings.shape[1])
+
+        # Add the embeddings to the index
+        index.add(embeddings)
+
+        # Query example
+        query_embedding = query_emb
+
+        # Perform a k-nearest neighbor search
+        k = 5  # Number of nearest neighbors to retrieve
+        distances, indices = index.search(np.array([query_embedding]), k)
+        print(indices, distances)
+        ##################
+        zoom=4
+        page_idx=int(indices[0][0])
+        save_path='/tmp/out.png'
+        ##################
+        # prompt = f"describe every component of the image in detail. Also answer this question in detail: Q:{query}"
+        prompt = f"Answer this question in detail: Q:{query}"
+
+        llava_response = multi_modal_llm.complete(
+            prompt=prompt,
+            image_documents=[ImageDocument(image_path=save_path)]  #img_paths[indices[0][0]])],
+        )
+        # return img_paths[indices[0][0]], img_embeddings[indices[0][0]], indices[0][0], llava_response.text
+        return llava_response.text
+    
+    return vision_gen_response(message)
 
 class Source(BaseModel):
     file: str
@@ -178,11 +243,27 @@ class PrivateGptUi:
                 resps=""
                 for response in yield_deltas(query_stream):
                     resps = response
-                # Generate additional response from gen_from_vision()
-                additional_response = gen_from_vision(message, response)
+                
+                ############## Generate additional response from gen_from_vision() #############
+                additional_response=[]
 
-                # Append the additional response to the original response
-                full_response = "This was your response just now: "+ resps + "\n\n Now I have some additional information for you: " + additional_response
+                cur_sources = Source.curate_sources(query_stream.sources)
+                used_files = set()
+                for index, source in enumerate(cur_sources, start=1):
+                    if f"{source.file}" not in used_files:
+
+                        additional_response=gen_from_vision(source.file,message)
+
+                        used_files.add(f"{source.file}")  # Unique files only
+                
+                # print(additional_response)
+
+                full_response = "This was your response just now: "+ resps + "\n\n Now I have some additional information for you: " + '\n'.join(additional_response)
+                ####################################################
+
+                # additional_response = gen_from_vision(message, response)
+                # # Append the additional response to the original response
+                # full_response = "This was your response just now: "+ resps + "\n\n Now I have some additional information for you: " + additional_response
 
                 print(f'FULL RESPONSE: -----{full_response}---------')
 
