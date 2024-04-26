@@ -88,7 +88,10 @@ class IngestService:
         file_data = raw_file_data.read()
         return self._ingest_data(file_name, file_data)
 
-    def create_image_embeddings(pdf_name_path):
+    def create_image_embeddings(self,pdf_name_path):
+        import os
+        print(pdf_name_path)
+        print(os.getcwd())
         pdf_name,pdf_path=pdf_name_path
         def pdf_to_images(pdf_path):
             images = convert_from_path(pdf_path,dpi=300) # https://pdf2image.readthedocs.io/en/latest/reference.html#pdf2image.pdf2image.convert_from_bytes
@@ -96,7 +99,7 @@ class IngestService:
             return images
 
         images = pdf_to_images(pdf_path)
-        img_model = SentenceTransformer('clip-ViT-B-32', device='cuda:3')
+        img_model = SentenceTransformer('clip-ViT-B-32', device='cpu') #cuda:3
 
         img_embeddings = img_model.encode(images)
         embeddings = np.array(img_embeddings).astype('float32')
@@ -107,10 +110,10 @@ class IngestService:
         'images': images,
         'embeddings': embeddings
         }
-        with open(f'../../../local_data/{pdf_name}.pkl', 'wb') as f:
+        with open(f'local_data/{pdf_name}.pkl', 'wb') as f:
             pickle.dump(data, f)
 
-    def bulk_ingest(self, files: list[tuple[str, Path]] -> list[IngestedDoc]):
+    def bulk_ingest(self, files: list[tuple[str, Path]]) -> list[IngestedDoc]:
 
         for f in files:
             self.create_image_embeddings(f)
