@@ -17,6 +17,12 @@ from private_gpt.components.vector_store.vector_store_component import (
 from private_gpt.server.ingest.model import IngestedDoc
 from private_gpt.settings.settings import settings
 
+from pdf2image import convert_from_path
+from PIL import Image
+from sentence_transformers import SentenceTransformer, util
+import numpy as np
+import pickle
+
 if TYPE_CHECKING:
     from llama_index.core.storage.docstore.types import RefDocInfo
 
@@ -82,7 +88,32 @@ class IngestService:
         file_data = raw_file_data.read()
         return self._ingest_data(file_name, file_data)
 
-    def bulk_ingest(self, files: list[tuple[str, Path]]) -> list[IngestedDoc]:
+    def create_image_embeddings(pdf_name_path):
+        pdf_name,pdf_path=pdf_name_path
+        def pdf_to_images(pdf_path):
+            images = convert_from_path(pdf_path)
+            return images
+
+        images = pdf_to_images(pdf_path)
+        img_model = SentenceTransformer('clip-ViT-B-32', device='cuda:3')
+
+        img_embeddings = img_model.encode(images)
+        embeddings = np.array(img_embeddings).astype('float32')
+        
+        # np.savez(f'../../../local_data/{pdf_name}', embeddings)
+        data = {
+        'pdf_name': pdf_name,
+        'images': images,
+        'embeddings': embeddings
+        }
+        with open(f'{pdf_name}.pkl', 'wb') as f:
+            pickle.dump(data, f)
+
+    def bulk_ingest(self, files: list[tuple[str, Path]] -> list[IngestedDoc]):
+
+        for f in files:
+            self.create_image_embeddings(f)
+
         logger.info("Ingesting file_names=%s", [f[0] for f in files])
         documents = self.ingest_component.bulk_ingest(files)
         logger.info("Finished ingestion file_name=%s", [f[0] for f in files])
