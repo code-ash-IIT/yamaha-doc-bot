@@ -26,6 +26,7 @@ from private_gpt.ui.images import logo_svg
 import pickle
 import faiss
 import numpy as np
+from PIL import Image
 from sentence_transformers import SentenceTransformer, util
 
 from dotenv import load_dotenv
@@ -89,8 +90,12 @@ def gen_from_vision(pdf_name,message):
         print(indices, distances)
         ##################
         zoom=4
-        page_idx=int(indices[0][0])
+        page_idx=int(indices[0][0])  # least distance (top 1)
         save_path='/tmp/out.png'
+
+        context_img=images[page_idx]
+        context_img.save(save_path)  # Saves the Context image(having least distance in index.search)
+        
         ##################
         # prompt = f"describe every component of the image in detail. Also answer this question in detail: Q:{query}"
         prompt = f"Answer this question in detail: Q:{query}"
