@@ -61,7 +61,7 @@ def gen_from_vision(pdf_name,message):
             data = pickle.load(f)
         return data['pdf_name'], data['images'], data['embeddings']
 
-    pdf_name, images, embeddings = load_database_pickle(f'../../local_data/{pdf_name}.pkl')
+    pdf_name, images, embeddings = load_database_pickle(f'/storage/ashutosh/hackathon/private-gpt/local_data/{pdf_name}.pkl')
 
     multi_modal_llm = ReplicateMultiModal(
         model=REPLICATE_MULTI_MODAL_LLM_MODELS["llava-13b"],
@@ -263,7 +263,7 @@ class PrivateGptUi:
                 
                 # print(additional_response)
 
-                full_response = "This was your response just now: "+ resps + "\n\n Now I have some additional information for you: " + '\n'.join(additional_response)
+                full_response = "This was your response just now: "+ resps + "\n\n Now I have some additional information for you: " + ''.join(additional_response)
                 ####################################################
 
                 # additional_response = gen_from_vision(message, response)

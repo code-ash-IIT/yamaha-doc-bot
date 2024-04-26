@@ -88,8 +88,8 @@ class IngestService:
         file_data = raw_file_data.read()
         return self._ingest_data(file_name, file_data)
 
-    def create_image_embeddings(pdf_name_path):
-        pdf_name,pdf_path=pdf_name_path
+    def create_image_embeddings(self, pdf_name, pdf_path):
+        # pdf_name,pdf_path=pdf_name_path
         def pdf_to_images(pdf_path):
             images = convert_from_path(pdf_path,dpi=300) # https://pdf2image.readthedocs.io/en/latest/reference.html#pdf2image.pdf2image.convert_from_bytes
             # dpi=200,transparent=False,first_page,last_page 
@@ -107,13 +107,14 @@ class IngestService:
         'images': images,
         'embeddings': embeddings
         }
-        with open(f'../../../local_data/{pdf_name}.pkl', 'wb') as f:
+        with open(f'/storage/ashutosh/hackathon/private-gpt/local_data/{pdf_name}.pkl', 'wb') as f:
             pickle.dump(data, f)
 
-    def bulk_ingest(self, files: list[tuple[str, Path]] -> list[IngestedDoc]):
+    def bulk_ingest(self, files: list[tuple[str, Path]]) -> list[IngestedDoc]:
 
-        for f in files:
-            self.create_image_embeddings(f)
+        for file_name, file_path in files:
+            print(file_path)
+            self.create_image_embeddings(file_name, file_path)
 
         logger.info("Ingesting file_names=%s", [f[0] for f in files])
         documents = self.ingest_component.bulk_ingest(files)
