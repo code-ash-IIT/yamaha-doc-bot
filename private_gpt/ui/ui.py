@@ -28,7 +28,7 @@ import pickle
 import faiss
 import numpy as np
 from PIL import Image
-# from sentence_transformers import SentenceTransformer, util
+from sentence_transformers import util
 import private_gpt.ui.load_text_model as load_text_model
 import uuid
 
@@ -73,22 +73,28 @@ def gen_from_vision(pdf_name,message,img_name: str | None = None, save_image_onl
         query_emb = text_model.encode(query)
 
         # Instantiate a FAISS index
-        index = faiss.IndexFlatL2(embeddings.shape[1])
+        # index = faiss.IndexFlatL2(embeddings.shape[1])
 
         # Add the embeddings to the index
-        index.add(embeddings)
+        # index.add(embeddings)
 
-        # Query example
-        query_embedding = query_emb
+        # Query
+        # query_embedding = query_emb
 
         # Perform a k-nearest neighbor search
         k = 5  # Number of nearest neighbors to retrieve
-        distances, indices = index.search(np.array([query_embedding]), k)
-        print(indices, distances)
+        # distances, indices = index.search(np.array([query_embedding]), k)
+        # print(indices, distances)
+        # Then, we use the util.semantic_search function, which computes the cosine-similarity
+        # between the query embedding and all image embeddings.
+        # It then returns the top_k highest ranked images, which we output
+        hits = util.semantic_search(query_emb, embeddings, top_k=k)[0]
+        print(hits)
         ##################
-        page_idx=int(indices[0][0])  # least distance (top 1)
+        # page_idx=int(indices[0][0])  # least distance (top 1)
 
-        context_img=images[page_idx]
+        # context_img=images[page_idx]
+        context_img=images[hits[0]['corpus_id']]
         context_img.save(save_path)  # Saves the Context image(having least distance in index.search)
         
     save_image(message)

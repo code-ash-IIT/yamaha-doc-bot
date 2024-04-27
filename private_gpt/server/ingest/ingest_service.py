@@ -120,6 +120,7 @@ class IngestService:
             print(file_path)
             self.create_image_embeddings(file_name, file_path)
 
+        logger.info("Created Image embedding")
         logger.info("Ingesting file_names=%s", [f[0] for f in files])
         documents = self.ingest_component.bulk_ingest(files)
         logger.info("Finished ingestion file_name=%s", [f[0] for f in files])
