@@ -27,7 +27,8 @@ import pickle
 import faiss
 import numpy as np
 from PIL import Image
-from sentence_transformers import SentenceTransformer, util
+# from sentence_transformers import SentenceTransformer, util
+import private_gpt.ui.load_text_model as load_text_model
 
 from dotenv import load_dotenv
 # REPLICATE_API_TOKEN = ...  in private_gpt/ui/.env 
@@ -46,7 +47,7 @@ THIS_DIRECTORY_RELATIVE = Path(__file__).parent.relative_to(PROJECT_ROOT_PATH)
 # Should be "private_gpt/ui/avatar-bot.ico"
 AVATAR_BOT = THIS_DIRECTORY_RELATIVE / "avatar-bot.ico"
 
-UI_TAB_TITLE = "My Private GPT"
+UI_TAB_TITLE = "Yamaha DocBot"
 
 SOURCES_SEPARATOR = "\n\n Sources: \n"
 
@@ -71,7 +72,8 @@ def gen_from_vision(pdf_name,message):
 
     def vision_gen_response(query):
         
-        text_model = SentenceTransformer('sentence-transformers/clip-ViT-B-32-multilingual-v1', device='cuda:3')
+        # text_model = SentenceTransformer('sentence-transformers/clip-ViT-B-32-multilingual-v1', device='cuda:3')
+        text_model=load_text_model.text_model
 
         query_emb = text_model.encode(query)
 
@@ -421,7 +423,7 @@ class PrivateGptUi:
             theme=gr.themes.Soft(primary_hue=slate),
             css=".logo { "
             "display:flex;"
-            "background-color: #C7BAFF;"
+            "background-color: #9c6543;"
             "height: 80px;"
             "border-radius: 8px;"
             "align-content: center;"
@@ -435,7 +437,8 @@ class PrivateGptUi:
             "#col { height: calc(100vh - 112px - 16px) !important; }",
         ) as blocks:
             with gr.Row():
-                gr.HTML(f"<div class='logo'/><img src={logo_svg} alt=PrivateGPT></div")
+                gr.HTML(f"<div class='logo'><b>Yamaha DocBot</b></div>")
+                # gr.HTML(f"<div class='logo'/><img src={logo_svg} alt=DocBot></div")
 
             with gr.Row(equal_height=False):
                 with gr.Column(scale=3):
