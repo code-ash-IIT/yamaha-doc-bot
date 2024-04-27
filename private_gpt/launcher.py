@@ -19,6 +19,7 @@ from private_gpt.settings.settings import Settings
 
 logger = logging.getLogger(__name__)
 
+# from sentence_transformers import SentenceTransformer, util
 
 def create_app(root_injector: Injector) -> FastAPI:
 
@@ -27,6 +28,9 @@ def create_app(root_injector: Injector) -> FastAPI:
         request.state.injector = root_injector
 
     app = FastAPI(dependencies=[Depends(bind_injector_to_request)])
+
+    # app.img_model=SentenceTransformer('clip-ViT-B-32', device='cpu') #cuda:3
+    # app.text_model = SentenceTransformer('sentence-transformers/clip-ViT-B-32-multilingual-v1', device='cpu') #cuda:3
 
     app.include_router(completions_router)
     app.include_router(chat_router)

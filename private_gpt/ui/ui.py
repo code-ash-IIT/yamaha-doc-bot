@@ -27,7 +27,8 @@ import pickle
 import faiss
 import numpy as np
 from PIL import Image
-from sentence_transformers import SentenceTransformer, util
+# from sentence_transformers import SentenceTransformer, util
+import private_gpt.ui.load_text_model as load_text_model
 
 from dotenv import load_dotenv
 # REPLICATE_API_TOKEN = ...  in private_gpt/ui/.env 
@@ -46,7 +47,7 @@ THIS_DIRECTORY_RELATIVE = Path(__file__).parent.relative_to(PROJECT_ROOT_PATH)
 # Should be "private_gpt/ui/avatar-bot.ico"
 AVATAR_BOT = THIS_DIRECTORY_RELATIVE / "avatar-bot.ico"
 
-UI_TAB_TITLE = "My Private GPT"
+UI_TAB_TITLE = "DocBot"
 
 SOURCES_SEPARATOR = "\n\n Sources: \n"
 
@@ -71,7 +72,9 @@ def gen_from_vision(pdf_name,message):
 
     def vision_gen_response(query):
         
-        text_model = SentenceTransformer('sentence-transformers/clip-ViT-B-32-multilingual-v1', device='cpu') #cuda:3
+        # text_model = SentenceTransformer('sentence-transformers/clip-ViT-B-32-multilingual-v1', device='cpu') #cuda:3
+        
+        text_model=load_text_model.text_model
 
         query_emb = text_model.encode(query)
 
@@ -607,9 +610,11 @@ class PrivateGptUi:
         logger.info("Mounting the gradio UI, at path=%s", path)
         gr.mount_gradio_app(app, blocks, path=path)
 
-
 if __name__ == "__main__":
+    
     ui = global_injector.get(PrivateGptUi)
     _blocks = ui.get_ui_blocks()
     _blocks.queue()
     _blocks.launch(debug=False, show_api=False)
+
+

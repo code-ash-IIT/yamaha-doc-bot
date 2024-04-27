@@ -19,7 +19,9 @@ from private_gpt.settings.settings import settings
 
 from pdf2image import convert_from_path
 from PIL import Image
-from sentence_transformers import SentenceTransformer, util
+# from sentence_transformers import SentenceTransformer, util
+
+import private_gpt.server.ingest.load_img_model as load_img_model
 import numpy as np
 import pickle
 
@@ -99,7 +101,8 @@ class IngestService:
             return images
 
         images = pdf_to_images(pdf_path)
-        img_model = SentenceTransformer('clip-ViT-B-32', device='cpu') #cuda:3
+        # img_model = SentenceTransformer('clip-ViT-B-32', device='cpu') #cuda:3
+        img_model = load_img_model.img_model
 
         img_embeddings = img_model.encode(images)
         embeddings = np.array(img_embeddings).astype('float32')
