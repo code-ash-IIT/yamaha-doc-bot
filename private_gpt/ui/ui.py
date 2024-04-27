@@ -260,7 +260,7 @@ class PrivateGptUi:
                 ############## Generate additional response from gen_from_vision() #############
                 additional_response=[]
                 img_name=str(uuid.uuid4())+'.png'
-                print('\nBefore image',img_name)
+                print('\nBefore image',img_name,'-'*20,'\n')
                 cur_sources = Source.curate_sources(query_stream.sources)
                 used_files = set()
                 for index, source in enumerate(cur_sources, start=1):
@@ -297,12 +297,14 @@ class PrivateGptUi:
                 final_resp = ""
                 
                 img_name=str(uuid.uuid4())+'.png'
-                print('\nAfter image',img_name)
+                print('\nAfter image',img_name,'-'*20,'\n')
                 for stream in yield_deltas(next_response,None):
                     final_resp = stream
                 
                 final_resp += f'\n<img src="context_images/{img_name}">' if img_name else ''
 
+                cur_sources = Source.curate_sources(query_stream.sources)
+                used_files = set()
                 for index, source in enumerate(cur_sources, start=1):
                     if f"{source.file}" not in used_files:
 
@@ -450,17 +452,17 @@ class PrivateGptUi:
         logger.debug("Creating the UI blocks")
         with gr.Blocks(
             title=UI_TAB_TITLE,
-            theme=gr.themes.Soft(primary_hue=slate),
+            theme=gr.themes.Monochrome(primary_hue=slate),
             css=".logo { "
             "display:flex;"
-            "background-color: #9c6543;"
+            "background-color: rgb(28, 15, 85);"
             "height: 80px;"
-            "border-radius: 8px;"
+            # "border-radius: 8px;"
             "align-content: center;"
             "justify-content: center;"
             "align-items: center;"
             "}"
-            ".logo img { height: 25% }"
+            ".logo b { font-size: 2.5rem; color: #c5c4c4 }"
             ".contain { display: flex !important; flex-direction: column !important; }"
             "#component-0, #component-3, #component-10, #component-8  { height: 100% !important; }"
             "#chatbot { flex-grow: 1 !important; overflow: auto !important;}"
@@ -476,6 +478,7 @@ class PrivateGptUi:
                         MODES,
                         label="Mode",
                         value="Query Files",
+                        visible=False,
                     )
                     upload_button = gr.components.UploadButton(
                         "Upload File(s)",
@@ -616,7 +619,7 @@ class PrivateGptUi:
                     _ = gr.ChatInterface(
                         self._chat,
                         chatbot=gr.Chatbot(
-                            label=label_text,
+                            label=None and label_text,
                             show_copy_button=True,
                             elem_id="chatbot",
                             render=False,

@@ -25,3 +25,16 @@ vectorstore:
 
 qdrant:
   path: local_data/private_gpt/qdrant
+
+
+# llm:
+#   mode: llamacpp
+#   # Should be matching the selected model
+#   max_new_tokens: 512
+#   context_window: 8000 #3900
+#   tokenizer: meta-llama/Meta-Llama-3-8B-Instruct
+
+# llamacpp:
+#   prompt_style: "llama2"
+#   llm_hf_repo_id: lmstudio-community/Meta-Llama-3-8B-Instruct-GGUF
+#   llm_hf_model_file: Meta-Llama-3-8B-Instruct-Q4_K_M.gguf
