@@ -94,7 +94,7 @@ class IngestService:
     def create_image_embeddings(self, pdf_name, pdf_path):
         # pdf_name,pdf_path=pdf_name_path
         def pdf_to_images(pdf_path):
-            images = convert_from_path(pdf_path,dpi=300) # https://pdf2image.readthedocs.io/en/latest/reference.html#pdf2image.pdf2image.convert_from_bytes
+            images = convert_from_path(pdf_path,dpi=300,first_page=7) # https://pdf2image.readthedocs.io/en/latest/reference.html#pdf2image.pdf2image.convert_from_bytes
             # dpi=200,transparent=False,first_page,last_page 
             return images
 

@@ -6,7 +6,7 @@ llm:
   mode: llamacpp
   # Should be matching the selected model
   max_new_tokens: 512
-  context_window: 3900
+  context_window: 6000
   tokenizer: mistralai/Mistral-7B-Instruct-v0.2
 
 llamacpp:
@@ -31,7 +31,7 @@ qdrant:
 #   mode: llamacpp
 #   # Should be matching the selected model
 #   max_new_tokens: 512
-#   context_window: 8000 #3900
+#   context_window: 6000 #3900
 #   tokenizer: meta-llama/Meta-Llama-3-8B-Instruct
 
 # llamacpp:

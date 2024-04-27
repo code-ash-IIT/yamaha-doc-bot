@@ -7,7 +7,7 @@ server:
 llm:
   mode: ollama
   max_new_tokens: 512
-  context_window: 3900
+  context_window: 6000
 
 embedding:
   mode: ollama

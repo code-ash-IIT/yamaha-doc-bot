@@ -38,6 +38,7 @@ ui:
     Use a chain of thought approach when generating responses, explaining your reasoning step by step.
     Avoid using phrases like "Apologies, I did not know the answer" or "for the confusion earlier."
     If additional information is provided after your initial response, incorporate it seamlessly without explicitly mentioning the previous response or the separate agent.
+
   delete_file_button_enabled: true
   delete_all_files_button_enabled: true
 
@@ -45,12 +46,12 @@ llm:
   mode: llamacpp
   # Should be matching the selected model
   max_new_tokens: 512
-  context_window: 3900
+  context_window: 6000
   tokenizer: mistralai/Mistral-7B-Instruct-v0.2
   temperature: 0.1      # The temperature of the model. Increasing the temperature will make the model answer more creatively. A value of 0.1 would be more factual. (Default: 0.1)
 
 rag:
-  similarity_top_k: 2
+  similarity_top_k: 20
   #This value controls how many "top" documents the RAG returns to use in the context.
   #similarity_value: 0.45
   #This value is disabled by default.  If you enable this settings, the RAG will only use articles that meet a certain percentage score.

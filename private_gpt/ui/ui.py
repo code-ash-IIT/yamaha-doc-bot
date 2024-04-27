@@ -6,6 +6,7 @@ import time
 from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
+# from googletrans import Translator
 
 import gradio as gr  # type: ignore
 from fastapi import FastAPI
@@ -244,6 +245,8 @@ class PrivateGptUi:
                     use_context=True,
                     context_filter=context_filter,
                 )
+                print("CONTEXT-FILTER:--------------------------------\n",context_filter, '--------\n---*****--\n')
+                print("query_stream:--------------------------------\n",query_stream, '--------\n---*****--\n')
                 # yield from yield_deltas(query_stream)
                 ############ DEBUG: ###########
                 # for deltas in yield_deltas(query_stream):
@@ -273,11 +276,11 @@ class PrivateGptUi:
                 # print(additional_response)
 
                 # full_response = "This was your response just now: "+ resps + "\n\n Now I have some additional information for you: " + ''.join(additional_response)
-                print(query_stream)
-                print(f'MESSAGE IS THISSSS: \n\n{message}\n\n\n\n\n\n')
+                # print(query_stream)
+                # print(f'MESSAGE IS THISSSS: \n\n{message}\n\n\n\n\n\n')
                 # full_response = f"This was your current response: {resps}\nThis response may contain information about multiple queries, but you only have to answer about the query '{query_stream}'. Here I have a response from another agent for the same context, but it is only related to the query asked: {''.join(additional_response)}"
                 # full_response = f"This was your current response: {resps}\n\nThis response may contain information about multiple queries, but you only have to answer about the query '{message}'. Applying a multimodal rag algorithm, here is refined and summarized information from the context itself about the query asked: {''.join(additional_response)}"
-                full_response = f"This was your current response: {resps}\nThis response may contain information about multiple queries, but you only have to answer about the query '{message}'. Applying confirmational analysis, the refined information about the query asked is: {''.join(additional_response)}"
+                full_response = f"This was your current response: {resps}\nThis response may contain information about multiple queries. But you only have to answer about the query '{message}'. Applying confirmational analysis, the refined information about the query asked is: {''.join(additional_response)}."
                 ####################################################
 
                 # additional_response = gen_from_vision(message, response)
@@ -313,7 +316,13 @@ class PrivateGptUi:
                         used_files.add(f"{source.file}")  # Unique files only
                 
                 # print(type(final_resp))
+                
+                # if(flag):
+                #     translator = Translator()
+                #     translated = translator.translate(final_resp, dest='ja')
+
                 yield from yeild_resp(final_resp)
+
                 # yield from yield_deltas(next_response)
                 ###########CHANGED
             case "LLM Chat (no context from files)":

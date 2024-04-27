@@ -89,7 +89,7 @@ class LLMSettings(BaseModel):
         description="The maximum number of token that the LLM is authorized to generate in one completion.",
     )
     context_window: int = Field(
-        3900,
+        6000,
         description="The maximum number of context tokens for the model.",
     )
     tokenizer: str = Field(
