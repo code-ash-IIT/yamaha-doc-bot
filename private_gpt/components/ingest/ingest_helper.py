@@ -6,6 +6,11 @@ from llama_index.core.readers.base import BaseReader
 from llama_index.core.readers.json import JSONReader
 from llama_index.core.schema import Document
 
+from llama_index.readers.file.docs import (  # type: ignore
+            PDFReader,
+        )
+from typing import List
+
 logger = logging.getLogger(__name__)
 
 import io
@@ -17,6 +22,75 @@ class DocumentWithBlobs(Document):
     def __init__(self, **data):
         super().__init__(**data)
         self.doc_blobs = data.get('doc_blobs', [])
+
+from typing import List, Optional, Dict
+from llama_index.readers.file.docs import PDFReader
+
+
+import pdfplumber
+def list_pages(file_path: str) -> list:
+
+    pages_num=[]
+    with pdfplumber.open(file_path) as pdf:
+        for i in range(len(pdf.pages)):
+            page_num=pdf.pages[i].extract_text().split('\n')[-1]
+            if(sum([not v.isnumeric() for v in page_num.split('-')])):
+                page_num=str(i+1)
+
+            # print(page_num)
+            pages_num.append(page_num)
+    print(pages_num)
+    return pages_num
+
+
+# def list_pages(docs: list[Document]) -> list:
+#     pages_num=[]
+#     # with open(file_path, "rb") as fp:
+#     #     pdf_reader = PDFReader()
+#     #     docs=pdf_reader.load_data(file_path)
+#     for doc in docs:
+#         page_num=doc.text.split('\n')[-1]
+#         if('-' in page_num):
+#             section_len=len(page_num.split('-')[0])
+#             page_num=page_num[:-section_len]
+#             if(sum([not v.isnumeric() for v in page_num.split('-')])):
+#                 page_num=doc.metadata['page_label']
+#         else:
+#             page_num=doc.metadata['page_label']
+
+#         pages_num.append(page_num)
+#     return pages_num
+def update_page_numbers(docs: list[Document], file_path: str):
+    pages_num = list_pages(file_path)
+    # Iterate over the documents and update the page_label metadata
+    for i, doc in enumerate(docs):
+        doc.metadata['page_label'] = pages_num[i]
+
+# class CustomPDFReader(PDFReader):
+#     """Custom PDF parser."""
+
+#     def load_data(
+#         self,
+#         file: Path,
+#         extra_info: Optional[Dict] = None,
+#         fs: Optional[AbstractFileSystem] = None,
+#     ) -> List[Document]:
+#         """Parse file."""
+#         docs = super().load_data(file, extra_info, fs)
+
+#         for doc in docs:
+#             # Modify the page_number metadata
+#             page_text = doc.text
+#             page_num = page_text.split('\n')[-1]
+#             if '-' in page_num:
+#                 section_len = len(page_num.split('-')[0])
+#                 page_num = page_num[:-section_len]
+#             else:
+#                 page_num = "ORIGINAL_PAGE_NUMBER"
+
+#             doc.metadata["page_number"] = page_num
+
+#         return docs
 
 class PyMuPDFReader:
     """PDF parser using PyMuPDF."""
@@ -99,8 +173,9 @@ def _try_loading_included_file_formats() -> dict[str, type[BaseReader]]:
 
     default_file_reader_cls: dict[str, type[BaseReader]] = {
         ".hwp": HWPReader,
-        # ".pdf": PDFReader,
-        ".pdf": PyMuPDFReader,
+        ".pdf": PDFReader,
+        # ".pdf": PyMuPDFReader,
+        # ".pdf": CustomPDFReader,
         ".docx": DocxReader,
         ".pptx": PptxReader,
         ".ppt": PptxReader,
@@ -160,7 +235,10 @@ class IngestionHelper:
             return string_reader.load_data([file_data.read_text()])
 
         logger.debug("Specific reader found for extension=%s", extension)
-        return reader_cls().load_data(file_data)
+        # print(file_data, type(file_data))
+        docs = reader_cls().load_data(file_data)
+        update_page_numbers(docs, file_data) #ASHUTOSH
+        return docs
 
     @staticmethod
     def _exclude_metadata(documents: list[Document]) -> None:

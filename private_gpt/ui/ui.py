@@ -56,24 +56,17 @@ SOURCES_SEPARATOR = "\n\n Sources: \n"
 MODES = ["Query Files", "Search Files", "LLM Chat (no context from files)"]
 
 
-def gen_from_vision(pdf_name,message,img_name: str | None = None):
+def gen_from_vision(pdf_name,message,img_name: str | None = None, save_image_only: bool = True):
     # return "In the end, say thank you!"
-    
     def load_database_pickle(pickle_filename):
         with open(pickle_filename, 'rb') as f:
             data = pickle.load(f)
         return data['pdf_name'], data['images'], data['embeddings']
 
     pdf_name, images, embeddings = load_database_pickle(f'/home/ub/Downloads/ash_temp/hack/yamaha-doc-bot/local_data/{pdf_name}.pkl')
-
-    multi_modal_llm = ReplicateMultiModal(
-        model=REPLICATE_MULTI_MODAL_LLM_MODELS["llava-13b"],
-        max_new_tokens=200,
-        temperature=0.1,
-    )
-
-    def vision_gen_response(query,img_name: str | None = None):
-        
+    
+    save_path=f'/tmp/hackathon/{img_name}'
+    def save_image(query):
         # text_model = SentenceTransformer('sentence-transformers/clip-ViT-B-32-multilingual-v1', device='cuda:3')
         text_model=load_text_model.text_model
 
@@ -93,13 +86,23 @@ def gen_from_vision(pdf_name,message,img_name: str | None = None):
         distances, indices = index.search(np.array([query_embedding]), k)
         print(indices, distances)
         ##################
-        zoom=4
         page_idx=int(indices[0][0])  # least distance (top 1)
-        save_path=f'/tmp/hackathon/{img_name}'
 
         context_img=images[page_idx]
         context_img.save(save_path)  # Saves the Context image(having least distance in index.search)
         
+    save_image(message)
+    if(save_image_only):
+        return ''
+
+
+    multi_modal_llm = ReplicateMultiModal(
+        model=REPLICATE_MULTI_MODAL_LLM_MODELS["llava-13b"],
+        max_new_tokens=200,
+        temperature=0.1,
+    )
+
+    def vision_gen_response(query,img_name: str | None = None):
         ##################
         # prompt = f"describe every component of the image in detail. Also answer this question in detail: Q:{query}"
         prompt = f"Answer this question in detail: Q:{query}"
@@ -245,8 +248,8 @@ class PrivateGptUi:
                     use_context=True,
                     context_filter=context_filter,
                 )
-                print("CONTEXT-FILTER:--------------------------------\n",context_filter, '--------\n---*****--\n')
-                print("query_stream:--------------------------------\n",query_stream, '--------\n---*****--\n')
+                # print("CONTEXT-FILTER:--------------------------------\n",context_filter, '--------\n---*****--\n')
+                # print("query_stream:--------------------------------\n",query_stream, '--------\n---*****--\n')
                 # yield from yield_deltas(query_stream)
                 ############ DEBUG: ###########
                 # for deltas in yield_deltas(query_stream):
@@ -269,25 +272,25 @@ class PrivateGptUi:
                 for index, source in enumerate(cur_sources, start=1):
                     if f"{source.file}" not in used_files:
 
-                        additional_response=gen_from_vision(source.file,message,img_name)
+                        additional_response=gen_from_vision(source.file,message,img_name,save_image_only=False)
 
                         used_files.add(f"{source.file}")  # Unique files only
                 
                 # print(additional_response)
 
-                # full_response = "This was your response just now: "+ resps + "\n\n Now I have some additional information for you: " + ''.join(additional_response)
+                full_response = "`This was your response just now:` "+ resps + "\n`Show the above list of sources in your final response.`\n `Now I have some additional information for you:` " + ''.join(additional_response)
                 # print(query_stream)
                 # print(f'MESSAGE IS THISSSS: \n\n{message}\n\n\n\n\n\n')
                 # full_response = f"This was your current response: {resps}\nThis response may contain information about multiple queries, but you only have to answer about the query '{query_stream}'. Here I have a response from another agent for the same context, but it is only related to the query asked: {''.join(additional_response)}"
                 # full_response = f"This was your current response: {resps}\n\nThis response may contain information about multiple queries, but you only have to answer about the query '{message}'. Applying a multimodal rag algorithm, here is refined and summarized information from the context itself about the query asked: {''.join(additional_response)}"
-                full_response = f"This was your current response: {resps}\nThis response may contain information about multiple queries. But you only have to answer about the query '{message}'. Applying confirmational analysis, the refined information about the query asked is: {''.join(additional_response)}."
+                # full_response = f"This was your current response: {resps}\nThis response may contain information about multiple queries. But you only have to answer about the query '{message}'. Applying confirmational analysis, the refined information about the query asked is: {''.join(additional_response)}."
                 ####################################################
 
                 # additional_response = gen_from_vision(message, response)
                 # # Append the additional response to the original response
                 # full_response = "This was your response just now: "+ resps + "\n\n Now I have some additional information for you: " + additional_response
 
-                print(f'FULL RESPONSE: -----{full_response}---------')
+                # print(f'FULL RESPONSE: -----{full_response}---------')
 
                 # Send the combined response back to the LLM
                 # new_message = ChatMessage(content=full_response, role=MessageRole.USER)
@@ -306,12 +309,12 @@ class PrivateGptUi:
                 
                 final_resp += f'\n<img src="context_images/{img_name}">' if img_name else ''
 
-                cur_sources = Source.curate_sources(query_stream.sources)
+                cur_sources = Source.curate_sources(next_response.sources)
                 used_files = set()
                 for index, source in enumerate(cur_sources, start=1):
                     if f"{source.file}" not in used_files:
 
-                        additional_response=gen_from_vision(source.file,final_resp,img_name)
+                        additional_response=gen_from_vision(source.file,final_resp,img_name,save_image_only=True)
 
                         used_files.add(f"{source.file}")  # Unique files only
                 
