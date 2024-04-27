@@ -4,6 +4,8 @@ import logging
 
 from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+
 from injector import Injector
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.callbacks.global_handlers import create_global_handler
@@ -34,6 +36,8 @@ def create_app(root_injector: Injector) -> FastAPI:
     app.include_router(ingest_router)
     app.include_router(embeddings_router)
     app.include_router(health_router)
+
+    app.mount("/context_images", StaticFiles(directory="/tmp/hackathon/"), name='images')
 
     # Add LlamaIndex simple observability
     global_handler = create_global_handler("simple")

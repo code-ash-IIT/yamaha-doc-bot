@@ -111,7 +111,7 @@ class IngestService:
         'images': images,
         'embeddings': embeddings
         }
-        with open(f'/storage/ashutosh/hackathon/private-gpt/local_data/{pdf_name}.pkl', 'wb') as f:
+        with open(f'/home/ub/Downloads/ash_temp/hack/yamaha-doc-bot/local_data/{pdf_name}.pkl', 'wb') as f:
             pickle.dump(data, f)
 
     def bulk_ingest(self, files: list[tuple[str, Path]]) -> list[IngestedDoc]:

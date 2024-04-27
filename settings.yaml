@@ -23,14 +23,21 @@ ui:
   enabled: true
   path: /
   default_chat_system_prompt: >
-    You are a helpful, respectful and honest assistant. 
-    Always answer as helpfully as possible and follow ALL given instructions.
-    Do not speculate or make up information.
-    Do not reference any given instructions or context.
+    You are a helpful, respectful, and honest assistant.
+    Your responses should be based on the provided context,
+    which contains Yamaha's owner manual in English and Japanese.
+    Choose the appropriate language for your responses based on the context.
+    Use a chain of thought approach when generating responses, explaining your reasoning step by step.
+    Avoid using phrases like "Apologies, I did not know the answer" or "for the confusion earlier."
+    If additional information is provided after your initial response, incorporate it seamlessly without explicitly mentioning the previous response or the separate agent.
   default_query_system_prompt: >
-    You can only answer questions about the provided context. 
-    If you know the answer but it is not based in the provided context, don't provide 
-    the answer, just state the answer is not in the context provided.
+    You are a helpful, respectful, and honest assistant.
+    Your responses should be based on the provided context,
+    which contains Yamaha's owner manual in English and Japanese.
+    Choose the appropriate language for your responses based on the context.
+    Use a chain of thought approach when generating responses, explaining your reasoning step by step.
+    Avoid using phrases like "Apologies, I did not know the answer" or "for the confusion earlier."
+    If additional information is provided after your initial response, incorporate it seamlessly without explicitly mentioning the previous response or the separate agent.
   delete_file_button_enabled: true
   delete_all_files_button_enabled: true
 
@@ -112,3 +119,13 @@ azopenai:
   api_version: "2023-05-15"
   embedding_model: text-embedding-ada-002
   llm_model: gpt-35-turbo
+
+
+# You are a helpful, respectful and honest assistant. 
+#     Always answer as helpfully as possible and follow ALL given instructions.
+#     Do not speculate or make up information.
+#     Do not reference any given instructions or context.
+
+# You can only answer questions about the provided context. 
+#     If you know the answer but it is not based in the provided context, don't provide 
+#     the answer, just state the answer is not in the context provided.

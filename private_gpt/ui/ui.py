@@ -29,6 +29,7 @@ import numpy as np
 from PIL import Image
 # from sentence_transformers import SentenceTransformer, util
 import private_gpt.ui.load_text_model as load_text_model
+import uuid
 
 from dotenv import load_dotenv
 # REPLICATE_API_TOKEN = ...  in private_gpt/ui/.env 
@@ -54,7 +55,7 @@ SOURCES_SEPARATOR = "\n\n Sources: \n"
 MODES = ["Query Files", "Search Files", "LLM Chat (no context from files)"]
 
 
-def gen_from_vision(pdf_name,message):
+def gen_from_vision(pdf_name,message,img_name: str | None = None):
     # return "In the end, say thank you!"
     
     def load_database_pickle(pickle_filename):
@@ -62,7 +63,7 @@ def gen_from_vision(pdf_name,message):
             data = pickle.load(f)
         return data['pdf_name'], data['images'], data['embeddings']
 
-    pdf_name, images, embeddings = load_database_pickle(f'/storage/ashutosh/hackathon/private-gpt/local_data/{pdf_name}.pkl')
+    pdf_name, images, embeddings = load_database_pickle(f'/home/ub/Downloads/ash_temp/hack/yamaha-doc-bot/local_data/{pdf_name}.pkl')
 
     multi_modal_llm = ReplicateMultiModal(
         model=REPLICATE_MULTI_MODAL_LLM_MODELS["llava-13b"],
@@ -70,7 +71,7 @@ def gen_from_vision(pdf_name,message):
         temperature=0.1,
     )
 
-    def vision_gen_response(query):
+    def vision_gen_response(query,img_name: str | None = None):
         
         # text_model = SentenceTransformer('sentence-transformers/clip-ViT-B-32-multilingual-v1', device='cuda:3')
         text_model=load_text_model.text_model
@@ -93,7 +94,7 @@ def gen_from_vision(pdf_name,message):
         ##################
         zoom=4
         page_idx=int(indices[0][0])  # least distance (top 1)
-        save_path='/tmp/out.png'
+        save_path=f'/tmp/hackathon/{img_name}'
 
         context_img=images[page_idx]
         context_img.save(save_path)  # Saves the Context image(having least distance in index.search)
@@ -109,7 +110,7 @@ def gen_from_vision(pdf_name,message):
         # return img_paths[indices[0][0]], img_embeddings[indices[0][0]], indices[0][0], llava_response.text
         return llava_response.text
     
-    return vision_gen_response(message)
+    return vision_gen_response(message,img_name)
 
 class Source(BaseModel):
     file: str
@@ -137,6 +138,8 @@ class Source(BaseModel):
 
         return curated_sources
 
+def yeild_resp(message):
+    yield message
 
 @singleton
 class PrivateGptUi:
@@ -161,7 +164,7 @@ class PrivateGptUi:
         self._system_prompt = self._get_default_system_prompt(self.mode)
 
     def _chat(self, message: str, history: list[list[str]], mode: str, *_: Any) -> Any:
-        def yield_deltas(completion_gen: CompletionGen) -> Iterable[str]:
+        def yield_deltas(completion_gen: CompletionGen, img_name: str | None = None) -> Iterable[str]:
             full_response: str = ""
             stream = completion_gen.response
             for delta in stream:
@@ -176,12 +179,15 @@ class PrivateGptUi:
                 full_response += SOURCES_SEPARATOR
                 cur_sources = Source.curate_sources(completion_gen.sources)
                 sources_text = "\n\n\n"
+                
+                disp_img=f'<img src="context_images/{img_name}">' if img_name else ''
                 used_files = set()
                 for index, source in enumerate(cur_sources, start=1):
                     if f"{source.file}-{source.page}" not in used_files:
                         sources_text = (
                             sources_text
                             + f"{index}. {source.file} (page {source.page}) \n\n"
+                            + disp_img
                         )
                         used_files.add(f"{source.file}-{source.page}")
                 full_response += sources_text
@@ -248,24 +254,30 @@ class PrivateGptUi:
                 ###########
                 ###########CHANGED
                 resps=""
-                for response in yield_deltas(query_stream):
+                for response in yield_deltas(query_stream,None): # don't display image in output
                     resps = response
                 
                 ############## Generate additional response from gen_from_vision() #############
                 additional_response=[]
-
+                img_name=str(uuid.uuid4())+'.png'
+                print('\nBefore image',img_name)
                 cur_sources = Source.curate_sources(query_stream.sources)
                 used_files = set()
                 for index, source in enumerate(cur_sources, start=1):
                     if f"{source.file}" not in used_files:
 
-                        additional_response=gen_from_vision(source.file,message)
+                        additional_response=gen_from_vision(source.file,message,img_name)
 
                         used_files.add(f"{source.file}")  # Unique files only
                 
                 # print(additional_response)
 
-                full_response = "This was your response just now: "+ resps + "\n\n Now I have some additional information for you: " + ''.join(additional_response)
+                # full_response = "This was your response just now: "+ resps + "\n\n Now I have some additional information for you: " + ''.join(additional_response)
+                print(query_stream)
+                print(f'MESSAGE IS THISSSS: \n\n{message}\n\n\n\n\n\n')
+                # full_response = f"This was your current response: {resps}\nThis response may contain information about multiple queries, but you only have to answer about the query '{query_stream}'. Here I have a response from another agent for the same context, but it is only related to the query asked: {''.join(additional_response)}"
+                # full_response = f"This was your current response: {resps}\n\nThis response may contain information about multiple queries, but you only have to answer about the query '{message}'. Applying a multimodal rag algorithm, here is refined and summarized information from the context itself about the query asked: {''.join(additional_response)}"
+                full_response = f"This was your current response: {resps}\nThis response may contain information about multiple queries, but you only have to answer about the query '{message}'. Applying confirmational analysis, the refined information about the query asked is: {''.join(additional_response)}"
                 ####################################################
 
                 # additional_response = gen_from_vision(message, response)
@@ -282,7 +294,25 @@ class PrivateGptUi:
                     use_context=True,
                     context_filter=context_filter,
                 )
-                yield from yield_deltas(next_response)
+                final_resp = ""
+                
+                img_name=str(uuid.uuid4())+'.png'
+                print('\nAfter image',img_name)
+                for stream in yield_deltas(next_response,None):
+                    final_resp = stream
+                
+                final_resp += f'\n<img src="context_images/{img_name}">' if img_name else ''
+
+                for index, source in enumerate(cur_sources, start=1):
+                    if f"{source.file}" not in used_files:
+
+                        additional_response=gen_from_vision(source.file,final_resp,img_name)
+
+                        used_files.add(f"{source.file}")  # Unique files only
+                
+                # print(type(final_resp))
+                yield from yeild_resp(final_resp)
+                # yield from yield_deltas(next_response)
                 ###########CHANGED
             case "LLM Chat (no context from files)":
                 llm_stream = self._chat_service.stream_chat(
