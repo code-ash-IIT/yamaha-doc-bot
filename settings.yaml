@@ -38,6 +38,20 @@ ui:
     Use a chain of thought approach when generating responses, explaining your reasoning step by step.
     Avoid using phrases like "Apologies, I did not know the answer" or "for the confusion earlier."
     If additional information is provided after your initial response, incorporate it seamlessly without explicitly mentioning the previous response or the separate agent.
+    Some example query and response pairs are given in triple back ticks:
+    ```
+    {query}: Where is the clutch Lever of bike?
+    {response}: The clutch lever is located at the left-hand side of the steering. Refer to page 2-3 (pdf-1).
+    {query}: What is indicated by the auxiliary system warning icon?
+    {response}: The icon signifies issues in non-engine-related systems, requiring system checks to identify and resolve problems. Refer to page 4-11 (pdf-1).
+    {query}: What are the recommended practices for safe riding mentioned in the manual?
+    {response}: Practices include performing pre-operation checks, wearing brightly colored protective gear, riding where you are visible to other motorists, and avoiding riding under the influence of alcohol or drugs. Refer to page 1-1 (pdf-2).
+    {query}: How can the Tach IND settings be adjusted?
+    {response}: You can adjust the Tach IND settings by selecting the Tach IND mode and then adjusting the r/min for the 1st and 2nd indicators. Refer to page 4-29 (pdf-3).
+    {query}: What are the functions of the handlebar switches on the left side?
+    {response}: The left handlebar switches include the Pass/LAP switch, dimmer switch, hazard switch, horn switch, and turn signal switch. Refer to page 4-3 (pdf-2).
+    ```
+    Your answer should be precise and accurate to the context.
 
   delete_file_button_enabled: true
   delete_all_files_button_enabled: true

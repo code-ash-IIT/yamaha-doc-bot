@@ -61,6 +61,7 @@ def gen_from_vision(pdf_name,message,img_name: str | None = None, save_image_onl
     def load_database_pickle(pickle_filename):
         with open(pickle_filename, 'rb') as f:
             data = pickle.load(f)
+        # print(data['summary'])
         return data['pdf_name'], data['images'], data['embeddings']
 
     pdf_name, images, embeddings = load_database_pickle(f'/home/ub/Downloads/ash_temp/hack/yamaha-doc-bot/local_data/{pdf_name}.pkl')
@@ -94,6 +95,7 @@ def gen_from_vision(pdf_name,message,img_name: str | None = None, save_image_onl
         # page_idx=int(indices[0][0])  # least distance (top 1)
 
         # context_img=images[page_idx]
+        # if len(hits):
         context_img=images[hits[0]['corpus_id']]
         context_img.save(save_path)  # Saves the Context image(having least distance in index.search)
         
@@ -284,7 +286,7 @@ class PrivateGptUi:
                 
                 # print(additional_response)
 
-                full_response = "`This was your response just now:` "+ resps + "\n`Show the above list of sources in your final response.`\n `Now I have some additional information for you:` " + ''.join(additional_response)
+                full_response = "`This was your response just now:` "+ resps + "\n`Show the above list of sources (only pages) in your final response.`\n `Now here is some additional information from context for you, if you missed it, do not apologize just respond to the query precisely:` " + ''.join(additional_response)
                 # print(query_stream)
                 # print(f'MESSAGE IS THISSSS: \n\n{message}\n\n\n\n\n\n')
                 # full_response = f"This was your current response: {resps}\nThis response may contain information about multiple queries, but you only have to answer about the query '{query_stream}'. Here I have a response from another agent for the same context, but it is only related to the query asked: {''.join(additional_response)}"
