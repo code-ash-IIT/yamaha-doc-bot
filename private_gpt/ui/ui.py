@@ -6,7 +6,7 @@ import time
 from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
-# from googletrans import Translator
+from deep_translator import GoogleTranslator
 
 import gradio as gr  # type: ignore
 from fastapi import FastAPI
@@ -55,6 +55,12 @@ SOURCES_SEPARATOR = "\n\n Sources: \n"
 
 MODES = ["Query Files", "Search Files", "LLM Chat (no context from files)"]
 
+IS_JAP = False
+LANGUAGES = ["English", "Japanese"]
+
+def eng2jap(text: str) -> str:
+    translated = GoogleTranslator(source="auto", target="ja").translate(text=text)
+    return translated
 
 def gen_from_vision(pdf_name,message,img_name: str | None = None, save_image_only: bool = True):
     # return "In the end, say thank you!"
@@ -332,7 +338,10 @@ class PrivateGptUi:
                 #     translator = Translator()
                 #     translated = translator.translate(final_resp, dest='ja')
 
-                yield from yeild_resp(final_resp)
+                if IS_JAP:
+                    yield from yeild_resp(eng2jap(final_resp))
+                else:
+                    yield from yeild_resp(final_resp)
 
                 # yield from yield_deltas(next_response)
                 ###########CHANGED
@@ -452,6 +461,11 @@ class PrivateGptUi:
             gr.components.Textbox("All files"),
         ]
 
+    def _set_curent_lang(self, lang) -> None:
+        global IS_JAP
+        IS_JAP = (lang == "Japanese")
+        # print(self._is_jap)
+
     def _deselect_selected_file(self) -> Any:
         self._selected_filename = None
         return [
@@ -499,6 +513,15 @@ class PrivateGptUi:
                         label="Mode",
                         value="Query Files",
                         visible=False,
+                    )
+                    lang = gr.Radio(
+                        LANGUAGES,
+                        label="Language",
+                        value="English"
+                    )
+                    lang.change(
+                        self._set_curent_lang,
+                        inputs=lang
                     )
                     upload_button = gr.components.UploadButton(
                         "Upload File(s)",
