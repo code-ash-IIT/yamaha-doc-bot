@@ -194,39 +194,6 @@ class PrivateGptUi:
                 time.sleep(0.02)
 
             if completion_gen.sources:
-
-                import pdfplumber,pickle
-                def list_pages(file_path: str) -> list:
-                    pages_num=[]
-                    with pdfplumber.open(file_path) as pdf:
-                        for i in range(len(pdf.pages)):
-                            page_num=pdf.pages[i].extract_text().split('\n')[-1]
-                            if(sum([not v.isnumeric() for v in page_num.split('-')])):
-                                page_num=str(i+1)
-
-                            # print(page_num)
-                            pages_num.append(page_num)
-                    # print(pages_num)
-                    return pages_num
-                
-
-                def display_images(pdf_name,page_idx,img_name):
-    
-                    # return "In the end, say thank you!"
-                    def load_database_pickle(pickle_filename):
-                        with open(pickle_filename, 'rb') as f:
-                            data = pickle.load(f)
-                        # print(data['summary'])
-                        return data['pdf_name'], data['images'], data['embeddings']
-
-                    # pdf_name, images, embeddings = load_database_pickle(f'/home/vinayak/Desktop/IIT/8/dl/project/yamaha-doc-bot/local_data/{pdf_name}.pkl')
-                    pdf_name, images, embeddings = load_database_pickle(f'/home/ub/Downloads/ash_temp/hack/yamaha-doc-bot/local_data/{pdf_name}.pkl')
-
-                    save_path=f'/tmp/hackathon/{img_name}'
-                    images[page_idx-1].save(save_path)
-
-                    return
-                
                 full_response += SOURCES_SEPARATOR
                 cur_sources = Source.curate_sources(completion_gen.sources)
                 sources_text = "\n\n\n"
@@ -235,29 +202,9 @@ class PrivateGptUi:
                 used_files = set()
                 for index, source in enumerate(cur_sources, start=1):
                     if f"{source.file}-{source.page}" not in used_files:
-                        
-
-                        first_page=7
-                        npzfile=list_pages(str(f'/home/ub/Downloads/ash_temp/hack/yamaha-doc-bot/local_data/pdfs/{source.file}'))
-                        print(npzfile)
-                        map_pages=dict()
-                        for i in range(len(npzfile)):
-                            map_pages[npzfile[i]]=i+1-first_page+1
-                        print(map_pages)
-                        # print(f"map_pages['4-5']={map_pages['4-5']}")
-
-                        page_idx=map_pages[source.page]
-                        # page_idx=map_pages[source.page]
-
-                        id=str(uuid.uuid4())
-                        fname=source.file
-                        display_images(fname,page_idx,f'{id}.png')
-                        img_txt=f"{index}. {source.file} (<a href='context_images/{id}.png'> page {source.page} </a>) \n\n"
-
                         sources_text = (
                             sources_text
-                            # + f"{index}. {source.file} (page {source.page}) \n\n"
-                            + img_txt
+                            + f"{index}. {source.file} (page {source.page}) \n\n"
                             + disp_img
                         )
                         used_files.add(f"{source.file}-{source.page}")
@@ -374,7 +321,7 @@ class PrivateGptUi:
                 for stream in yield_deltas(next_response,None):
                     final_resp = stream
                 
-                # final_resp += f'\n<img src="context_images/{img_name}">' if img_name else ''
+                final_resp += f'\n<img src="context_images/{img_name}">' if img_name else ''
 
                 cur_sources = Source.curate_sources(next_response.sources)
                 used_files = set()
